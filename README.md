@@ -3,7 +3,7 @@
 
 <p align="left"> <img src="https://komarev.com/ghpvc/?username=sao-coding&label=Profile%20views&color=0e75b6&style=flat" alt="sao-coding" /> </p>
 
-<p align="left"> <a href="https://github.com/ryo-ma/github-profile-trophy"><img src="https://github-profile-trophy.vercel.app/?username=sao-coding&theme=onedark" alt="sao-coding" /></a> </p>
+<p align="left"> <a href="https://github.com/ryo-ma/github-profile-trophy"><img src="https://github-profile-trophy.vercel.app/?username=sao-coding&theme=onedark&row=1" alt="sao-coding" /></a> </p>
 
 <h3 align="left">Connect with me:</h3>
 <p align="left">
