@@ -3,6 +3,7 @@
 
 <p align="left"> <img src="https://komarev.com/ghpvc/?username=sao-coding&label=Profile%20views&color=0e75b6&style=flat" alt="sao-coding" /> </p>
 
+![](https://ghchart.rshah.org/ff8a66/sao-coding)
 ![Alt](https://repobeats.axiom.co/api/embed/c2e91a79185590b9022cf7ea8b38e533c645fdce.svg "Repobeats analytics image")
 
 <p align="left"> <a href="https://github.com/ryo-ma/github-profile-trophy"><img src="https://github-profile-trophy.vercel.app/?username=sao-coding&theme=buddhism&row=1" alt="sao-coding" /></a> </p>
