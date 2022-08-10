@@ -4,6 +4,9 @@
 <p align="left"> <img src="https://komarev.com/ghpvc/?username=sao-coding&label=Profile%20views&color=0e75b6&style=flat" alt="sao-coding" /> </p>
 
 ![](https://ghchart.rshah.org/ff8a66/sao-coding)
+
+![](https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif)
+
 ![Alt](https://repobeats.axiom.co/api/embed/e5ed543f56d748194c649c1b6af04ba18d307812.svg "Repobeats analytics image")
 
 <p align="left"> <a href="https://github.com/ryo-ma/github-profile-trophy"><img src="https://github-profile-trophy.vercel.app/?username=sao-coding&theme=buddhism&row=1" alt="sao-coding" /></a> </p>
