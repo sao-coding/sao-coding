@@ -2,7 +2,7 @@
 <h3 align="center">我4台灣人</h3>
 
 <p align="left"> <img src="https://komarev.com/ghpvc/?username=sao-coding&label=Profile%20views&color=0e75b6&style=flat" alt="sao-coding" /> </p>
-![](https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif)
+
 ![](https://ghchart.rshah.org/ff8a66/sao-coding)
 ![Alt](https://repobeats.axiom.co/api/embed/e5ed543f56d748194c649c1b6af04ba18d307812.svg "Repobeats analytics image")
 
