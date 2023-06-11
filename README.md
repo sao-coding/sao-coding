@@ -3,6 +3,8 @@
 
 <p align="left"> <img src="https://komarev.com/ghpvc/?username=sao-coding&label=Profile%20views&color=0e75b6&style=flat" alt="sao-coding" /> </p>
 
+[![wakatime](https://wakatime.com/badge/user/b8addc47-7f5d-4cb6-a922-388b0c6785e9.svg?style=for-the-badge)](https://wakatime.com/@b8addc47-7f5d-4cb6-a922-388b0c6785e9)
+
 ![](https://ghchart.rshah.org/ff8a66/sao-coding)
 
 ![](https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif)
