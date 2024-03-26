@@ -10,7 +10,7 @@ Web Developer
 * 🌍  I'm based in Taipei
 * 🖥️  See my portfolio at [xxx](http://xxx)
 * ✉️  You can contact me at [jeter.nice@gmail.com](mailto:jeter.nice@gmail.com)
-* 🚀  I'm currently working on [TIPX](http://tipx.sao-x.com)
+* 🚀  I'm currently working on [takming-forum-web](https://takming-forum.sao-x.com)
 * 🧠  I'm learning NextJS
 * 🤝  I'm open to collaborating on 有趣的項目
 * ⚡  ~~~
