@@ -253,7 +253,7 @@ function buildNeofetch(stats, theme) {
     line("Homelab", "Proxmox VE, Caddy, NetBird, Docker", INFO_WIDTH),
     "",
     header("Contact", INFO_WIDTH),
-    line("Email", "jeter.nice@gmail.com", INFO_WIDTH),
+    line("Email", "only@sao-x.com", INFO_WIDTH),
     line("Blog", BLOG.replace("https://", ""), INFO_WIDTH),
     line("X", "@sao_coding", INFO_WIDTH),
     line("Discord", "vx._.xv", INFO_WIDTH),

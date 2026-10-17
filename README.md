@@ -13,12 +13,12 @@
   <a href="https://www.twitch.tv/aox_s">twitch</a> ·
   <a href="https://discord.com/users/vx._.xv">discord</a> ·
   <a href="https://www.threads.net/@_xox._.xox._.xox._.xox._.xox_">threads</a> ·
-  <a href="mailto:jeter.nice@gmail.com">mail</a>
+  <a href="mailto:only@sao-x.com">mail</a>
 </p>
 
-我4台灣人，住台北，在 MSI 寫 code。白天寫 Web，晚上在家裡的 Proxmox 上自架各種東西，踩到的坑都寫在[部落格](https://blog.sao-x.com)。
+Taiwanese dev in Taipei, writing code at MSI. Web stuff by day, self-hosting everything on a Proxmox box at home by night — the rabbit holes end up on my [blog](https://blog.sao-x.com) (in Chinese).
 
-#### 最近寫的
+#### Latest posts
 
 <!-- BLOG-POSTS:START -->
 - `2026-10-08` [Caddy + Cloudflare 自動更新動態 IPv6 DDNS](https://blog.sao-x.com/posts/caddy-cloudflare-dynamic-ipv6-ddns) <sub>#self-hosted</sub>
@@ -33,13 +33,13 @@
 > 💭 🎉 自訂右鍵功能正式啟動！🤣 現在只要按下右鍵，就能享受更方便、更直覺的操作體驗！ 快去試試看，有什麼想法或建議也歡迎留言告訴我～ <sub>— [2026-07-18](https://blog.sao-x.com/thinking)</sub>
 <!-- THINKING:END -->
 
-#### 最近在做
+#### Working on
 
-- [**TIPX**](https://tipx.sao-x.com) — 德明的 TIP 系統太難用，乾脆自己做一個。課表、成績、作業、請假都在裡面
-- [**takming-forum**](https://github.com/sao-coding/takming-forum-web) — 給德明學生評課、賣二手書的地方
-- [**AppPulse**](https://github.com/sao-coding/AppPulse) — Go 寫的小工具，抓電腦正在播的音樂跟前景視窗，丟去 Webhook
-- [**sao-blog**](https://github.com/sao-coding/sao-blog) — 這個部落格本體，Next.js + Elysia + oRPC，也有 MCP 可以直接叫 AI 發文
-- [**3d**](https://github.com/sao-coding/3d) — 幫朋友代印 3D 列印的報價網站
+- [**Tessera**](https://github.com/Limatura/tessera) — self-hosted file and note sharing that cleans up after itself. One Rust binary, short codes, expiry and download limits, local disk or S3
+- [**TIPX**](https://tipx.sao-x.com) — my school's student portal was painful to use, so I rebuilt it: timetable, grades, assignments and leave requests in one place
+- [**takming-forum**](https://github.com/sao-coding/takming-forum-web) — course reviews and a used-textbook market for students at my school
+- [**AppPulse**](https://github.com/sao-coding/AppPulse) — tiny Go tool that picks up what's playing and the active window on my PC, then forwards it to a webhook
+- [**sao-blog**](https://github.com/sao-coding/sao-blog) — the blog itself: Next.js + Elysia + oRPC, with an MCP server so AI can publish posts
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./assets/contrib-dark.svg" />
