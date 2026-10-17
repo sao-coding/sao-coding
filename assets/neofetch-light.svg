@@ -20,12 +20,12 @@
 <text class="t" fill="#24292f">
 <tspan x="390" y="72"><tspan class="title">sao@coding</tspan> <tspan class="cc">———————————————————————————————————————————————</tspan></tspan>
 <tspan x="390" y="92"><tspan class="cc">. </tspan><tspan class="key">OS</tspan>:<tspan class="cc"> ...................... </tspan><tspan class="value">Windows 11, Proxmox VE, Debian</tspan></tspan>
-<tspan x="390" y="112"><tspan class="cc">. </tspan><tspan class="key">Uptime</tspan>:<tspan class="cc"> ..................... </tspan><tspan class="value">6 years, 10 months, 17 days</tspan></tspan>
+<tspan x="390" y="112"><tspan class="cc">. </tspan><tspan class="key">Uptime</tspan>:<tspan class="cc"> ..................... </tspan><tspan class="value">6 years, 10 months, 18 days</tspan></tspan>
 <tspan x="390" y="132"><tspan class="cc">. </tspan><tspan class="key">Host</tspan>:<tspan class="cc"> ............................................... </tspan><tspan class="value">MSI</tspan></tspan>
 <tspan x="390" y="152"><tspan class="cc">. </tspan><tspan class="key">Kernel</tspan>:<tspan class="cc"> ........................ </tspan><tspan class="value">Full-stack Web Developer</tspan></tspan>
 <tspan x="390" y="172"><tspan class="cc">. </tspan><tspan class="key">Editor</tspan>:<tspan class="cc"> ................................ </tspan><tspan class="value">Zed, Claude Code</tspan></tspan>
 <tspan x="390" y="192"></tspan>
-<tspan x="390" y="212"><tspan class="cc">. </tspan><tspan class="key">Languages</tspan>:<tspan class="cc"> ................... </tspan><tspan class="value">C#, JavaScript, TypeScript</tspan></tspan>
+<tspan x="390" y="212"><tspan class="cc">. </tspan><tspan class="key">Languages</tspan>:<tspan class="cc"> ............... </tspan><tspan class="value">TypeScript, JavaScript, Python</tspan></tspan>
 <tspan x="390" y="232"><tspan class="cc">. </tspan><tspan class="key">Stack.Web</tspan>:<tspan class="cc"> ............... </tspan><tspan class="value">React, Next.js, TanStack Start</tspan></tspan>
 <tspan x="390" y="252"><tspan class="cc">. </tspan><tspan class="key">Stack.Server</tspan>:<tspan class="cc"> ......... </tspan><tspan class="value">Elysia, oRPC, Drizzle, PostgreSQL</tspan></tspan>
 <tspan x="390" y="272"><tspan class="cc">. </tspan><tspan class="key">Homelab</tspan>:<tspan class="cc"> ............. </tspan><tspan class="value">Proxmox VE, Caddy, NetBird, Docker</tspan></tspan>
