@@ -140,15 +140,20 @@ async function getGitHubStats() {
   };
 }
 
+// 部落格掛掉時回傳 null，README 就保留上一次的文章列表
 async function getBlog() {
-  const [posts, thinkings] = await Promise.all([
-    fetch(`${BLOG_API}/posts`).then((r) => r.json()),
-    fetch(`${BLOG_API}/thinkings`).then((r) => r.json()),
-  ]);
-  return { posts: posts.data, thinking: thinkings.data?.[0] };
+  try {
+    const get = (path) => fetch(`${BLOG_API}${path}`, { signal: AbortSignal.timeout(15000) }).then((r) => r.json());
+    const [posts, thinkings] = await Promise.all([get("/posts"), get("/thinkings")]);
+    return { posts: posts.data, thinking: thinkings.data?.[0] };
+  } catch (err) {
+    console.warn(`blog API 取不到，略過文章更新：${err.message}`);
+    return null;
+  }
 }
 
 // ---------- SVG ----------
+// 兩張卡片（neofetch、contributions）共用同一套終端機視窗、配色、字型
 
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const fmt = (n) => n.toLocaleString("en-US");
@@ -161,6 +166,53 @@ function uptime(from) {
   if (d < 0) { m -= 1; d += new Date(now.getFullYear(), now.getMonth(), 0).getDate(); }
   if (m < 0) { y -= 1; m += 12; }
   return `${y} years, ${m} months, ${d} days`;
+}
+
+const THEMES = {
+  dark: { bg: "#0d1117", bar: "#161b22", border: "#30363d", text: "#c9d1d9", key: "#ffa657", value: "#a5d6ff", cc: "#484f58", from: "#3382ed", to: "#f97316", track: "#21262d" },
+  light: { bg: "#ffffff", bar: "#f6f8fa", border: "#d0d7de", text: "#24292f", key: "#bc4c00", value: "#0550ae", cc: "#afb8c1", from: "#1f6feb", to: "#e85d04", track: "#eaeef2" },
+};
+
+const SVG_WIDTH = 985;
+const CHAR_W = 8.8; // 15px 等寬字的寬度
+const LH = 20;
+
+function line(key, value, width) {
+  const dots = ".".repeat(Math.max(1, width - key.length - String(value).length - 4));
+  return `<tspan class="cc">. </tspan><tspan class="key">${esc(key)}</tspan>:<tspan class="cc"> ${dots} </tspan><tspan class="value">${esc(value)}</tspan>`;
+}
+
+function header(title, width) {
+  return `<tspan class="title">${esc(title)}</tspan> <tspan class="cc">${"—".repeat(Math.max(1, width - title.length - 1))}</tspan>`;
+}
+
+function textBlock(rows, x, y) {
+  return rows.map((row, i) => `<tspan x="${x}" y="${y + i * LH}">${row}</tspan>`).join("\n");
+}
+
+function terminal({ height, title, theme, body, style = "", defs = "" }) {
+  const c = THEMES[theme];
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${SVG_WIDTH}" height="${height}" viewBox="0 0 ${SVG_WIDTH} ${height}">
+<style>
+.t, .t tspan { font-family: 'JetBrains Mono','Cascadia Code',Consolas,'DejaVu Sans Mono',monospace; font-size: 15px; white-space: pre; }
+.title { fill: ${c.to}; font-weight: 700; }
+.key { fill: ${c.key}; }
+.value { fill: ${c.value}; }
+.cc { fill: ${c.cc}; }
+.cursor { fill: ${c.text}; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+${style}
+</style>
+<defs>${defs}</defs>
+<rect x="0.5" y="0.5" width="${SVG_WIDTH - 1}" height="${height - 1}" rx="12" fill="${c.bg}" stroke="${c.border}"/>
+<path d="M0.5 12.5a12 12 0 0 1 12-12h${SVG_WIDTH - 25}a12 12 0 0 1 12 12v24h-${SVG_WIDTH - 1}z" fill="${c.bar}"/>
+<line x1="0.5" y1="36.5" x2="${SVG_WIDTH - 0.5}" y2="36.5" stroke="${c.border}"/>
+<circle cx="22" cy="18.5" r="6" fill="#ff5f57"/><circle cx="42" cy="18.5" r="6" fill="#febc2e"/><circle cx="62" cy="18.5" r="6" fill="#28c840"/>
+<text x="${SVG_WIDTH / 2}" y="23" text-anchor="middle" class="t cc" style="font-size:13px">${esc(title)}</text>
+${body}
+</svg>
+`;
 }
 
 // 5x7 點陣字，用 <rect> 畫才不會因為字型不同而破圖
@@ -176,129 +228,57 @@ function pixelLogo(text, x, y, cell) {
     GLYPHS[ch].forEach((row, r) => {
       [...row].forEach((px, col) => {
         if (px !== "#") return;
-        const delay = ((i * 6 + col) * 0.03 + r * 0.02).toFixed(2);
-        rects.push(`<rect class="px" style="animation-delay:${delay}s" x="${x + (i * 6 + col) * cell}" y="${y + r * cell}" width="${cell - 2}" height="${cell - 2}" rx="2"/>`);
+        rects.push(`<rect x="${x + (i * 6 + col) * cell}" y="${y + r * cell}" width="${cell - 2}" height="${cell - 2}" rx="2"/>`);
       });
     });
   });
-  return { svg: rects.join(""), width: (text.length * 6 - 1) * cell };
+  return rects.join("");
 }
 
-// 最近 26 週的 contribution 長條圖
-function bars(weeks, x, y, width, height) {
-  const max = Math.max(...weeks, 1);
-  const step = width / weeks.length;
-  return weeks
-    .map((w, i) => {
-      const h = Math.max(2, (w / max) * height);
-      const opacity = (0.35 + 0.65 * (w / max)).toFixed(2);
-      return `<rect class="bar" style="animation-delay:${(i * 0.03).toFixed(2)}s" x="${(x + i * step).toFixed(1)}" y="${(y + height - h).toFixed(1)}" width="${(step - 3).toFixed(1)}" height="${h.toFixed(1)}" rx="1.5" fill-opacity="${opacity}"/>`;
-    })
-    .join("");
-}
+const INFO_WIDTH = 58;
 
-const WIDTH = 58; // 右欄每行字元數
-
-function line(key, value) {
-  const dots = ".".repeat(Math.max(1, WIDTH - key.length - value.length - 4));
-  return `<tspan class="cc">. </tspan><tspan class="key">${esc(key)}</tspan>:<tspan class="cc"> ${dots} </tspan><tspan class="value">${esc(value)}</tspan>`;
-}
-
-function header(title) {
-  return `- ${esc(title)} ${"—".repeat(WIDTH - title.length - 3)}`;
-}
-
-function buildSvg(stats, blog, theme) {
-  const c = theme === "dark"
-    ? { bg: "#0d1117", bar: "#161b22", border: "#30363d", text: "#c9d1d9", key: "#ffa657", value: "#a5d6ff", cc: "#484f58", from: "#3382ed", to: "#f97316", spark: "#3fb950" }
-    : { bg: "#ffffff", bar: "#f6f8fa", border: "#d0d7de", text: "#24292f", key: "#bc4c00", value: "#0550ae", cc: "#afb8c1", from: "#1f6feb", to: "#e85d04", spark: "#1a7f37" };
-
-  const info = [
-    `<tspan class="title">sao@coding</tspan> ${"—".repeat(WIDTH - 11)}`,
-    line("OS", "Windows 11, Proxmox VE, Debian"),
-    line("Uptime", uptime(stats.createdAt)),
-    line("Host", "MSI"),
-    line("Kernel", "Full-stack Web Developer"),
-    line("Editor", "Zed, Claude Code"),
+function buildNeofetch(stats, theme) {
+  const c = THEMES[theme];
+  const rows = [
+    header("sao@coding", INFO_WIDTH),
+    line("OS", "Windows 11, Proxmox VE, Debian", INFO_WIDTH),
+    line("Uptime", uptime(stats.createdAt), INFO_WIDTH),
+    line("Host", "MSI", INFO_WIDTH),
+    line("Kernel", "Full-stack Web Developer", INFO_WIDTH),
+    line("Editor", "Zed, Claude Code", INFO_WIDTH),
     "",
-    line("Languages.Programming", stats.topLangs.join(", ")),
-    line("Stack.Web", "React, Next.js, TanStack Start"),
-    line("Stack.Server", "Elysia, oRPC, Drizzle, PostgreSQL"),
-    line("Homelab", "Proxmox VE, Caddy, NetBird, Docker"),
+    line("Languages", stats.topLangs.join(", "), INFO_WIDTH),
+    line("Stack.Web", "React, Next.js, TanStack Start", INFO_WIDTH),
+    line("Stack.Server", "Elysia, oRPC, Drizzle, PostgreSQL", INFO_WIDTH),
+    line("Homelab", "Proxmox VE, Caddy, NetBird, Docker", INFO_WIDTH),
     "",
-    header("Contact"),
-    line("Email", "jeter.nice@gmail.com"),
-    line("Blog", BLOG.replace("https://", "")),
-    line("X", "@sao_coding"),
-    line("Discord", "vx._.xv"),
-    "",
-    header("GitHub Stats"),
-    line("Repos", `${stats.repos}  |  Stars: ${stats.stars}  |  Followers: ${stats.followers}`),
-    line("Commits", `${fmt(stats.commits)}  |  Contributions: ${fmt(stats.contributions)}`),
-    line("Blog.Posts", `${blog.posts.length}  |  Latest: ${blog.posts[0]?.createdAt.slice(0, 10) ?? "-"}`),
+    header("Contact", INFO_WIDTH),
+    line("Email", "jeter.nice@gmail.com", INFO_WIDTH),
+    line("Blog", BLOG.replace("https://", ""), INFO_WIDTH),
+    line("X", "@sao_coding", INFO_WIDTH),
+    line("Discord", "vx._.xv", INFO_WIDTH),
   ];
 
-  const leftX = 34;
+  const top = 72;
   const rightX = 390;
-  const top = 74;
-  const lh = 20;
-  const height = top + info.length * lh + 30;
+  const height = top + rows.length * LH + 22;
+  const cell = 18;
+  const logoY = top - 14 + ((rows.length - 1) * LH - 7 * cell) / 2;
 
-  const logo = pixelLogo("SAO", leftX, top - 14, 18);
-  const barsTop = top + 7 * 18 + 70;
-  const barsHeight = height - barsTop - 40;
-  const barsSvg = bars(stats.weeks, leftX, barsTop, 310, barsHeight);
-  const total26 = stats.weeks.reduce((a, b) => a + b, 0);
-  const infoSvg = info.map((row, i) => `<tspan x="${rightX}" y="${top + i * lh}">${row}</tspan>`).join("\n");
-  const cursorY = top + (info.length - 1) * lh;
-  const cursorX = rightX + (WIDTH + 1) * 8.8;
-
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="985" height="${height}" viewBox="0 0 985 ${height}" font-family="'JetBrains Mono','Cascadia Code',Consolas,'DejaVu Sans Mono',monospace" font-size="15px">
-<style>
-text, tspan { white-space: pre; }
-.title { fill: ${c.to}; font-weight: 700; }
-.key { fill: ${c.key}; }
-.value { fill: ${c.value}; }
-.cc { fill: ${c.cc}; }
-.spark { fill: ${c.spark}; }
-.px { animation: pop 0.4s ease-out both; }
-@keyframes pop { from { opacity: 0; } to { opacity: 1; } }
-.bar { transform-box: fill-box; transform-origin: bottom; animation: grow 0.6s ease-out both; }
-@keyframes grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
-.cursor { fill: ${c.text}; animation: blink 1s steps(1) infinite; }
-@keyframes blink { 50% { opacity: 0; } }
-.fade { animation: fade 0.8s ease-out both; }
-@keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-</style>
-<defs>
-  <linearGradient id="logo" gradientUnits="userSpaceOnUse" x1="34" y1="0" x2="340" y2="0">
-    <stop offset="0%" stop-color="${c.from}"/>
-    <stop offset="100%" stop-color="${c.to}"/>
-  </linearGradient>
-</defs>
-<rect x="0.5" y="0.5" width="984" height="${height - 1}" rx="12" fill="${c.bg}" stroke="${c.border}"/>
-<path d="M0.5 12.5a12 12 0 0 1 12-12h960a12 12 0 0 1 12 12v24h-984z" fill="${c.bar}"/>
-<line x1="0.5" y1="36.5" x2="984.5" y2="36.5" stroke="${c.border}"/>
-<circle cx="22" cy="18.5" r="6" fill="#ff5f57"/><circle cx="42" cy="18.5" r="6" fill="#febc2e"/><circle cx="62" cy="18.5" r="6" fill="#28c840"/>
-<text x="492" y="23" text-anchor="middle" fill="${c.cc}" font-size="13px">sao@coding: ~ — neofetch</text>
-<g class="fade">
-<g fill="url(#logo)">${logo.svg}</g>
-<text x="${leftX}" y="${barsTop - 16}" class="cc" font-size="13px">contributions · last 26 weeks · ${fmt(total26)}</text>
-<g class="spark">${barsSvg}</g>
-<line x1="${leftX}" y1="${barsTop + barsHeight + 0.5}" x2="${leftX + 307}" y2="${barsTop + barsHeight + 0.5}" stroke="${c.border}"/>
-<text fill="${c.text}">
-${infoSvg}
+  return terminal({
+    height,
+    theme,
+    title: "sao@coding: ~ — neofetch",
+    defs: `<linearGradient id="logo" gradientUnits="userSpaceOnUse" x1="34" y1="0" x2="340" y2="0"><stop offset="0" stop-color="${c.from}"/><stop offset="1" stop-color="${c.to}"/></linearGradient>`,
+    body: `<g fill="url(#logo)">${pixelLogo("SAO", 34, Math.round(logoY), cell)}</g>
+<text class="t" fill="${c.text}">
+${textBlock(rows, rightX, top)}
 </text>
-<rect class="cursor" x="${cursorX}" y="${cursorY - 13}" width="9" height="16"/>
-</g>
-</svg>
-`;
+<rect class="cursor" x="${rightX + (INFO_WIDTH + 1) * CHAR_W}" y="${top + (rows.length - 1) * LH - 13}" width="9" height="16"/>`,
+  });
 }
 
-// ---------- 3D dashboard ----------
-// 從 github-profile-3d-contrib 產出的 SVG 只取 3D 日曆，原本雷達圖跟圓餅圖的位置換成自己的 HUD 面板
-
+// github-profile-3d-contrib 的 SVG 只取 <style> 跟第一個 <g>（3D 日曆），雷達圖、圓餅圖不要
 function topLevelChildren(svg) {
   const body = svg.replace(/^[\s\S]*?<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "");
   const children = [];
@@ -320,142 +300,88 @@ function topLevelChildren(svg) {
   return children;
 }
 
-const LANG_COLORS = { TypeScript: "#3178c6", JavaScript: "#f1e05a", Go: "#00add8", "C#": "#2bbf5a", Python: "#3572a5", Rust: "#dea584", Kotlin: "#a97bff", Java: "#b07219", "C++": "#f34b7d", PHP: "#4f5d95" };
-const NEON = { cyan: "#00e5ff", magenta: "#ff3df2", yellow: "#ffc837", green: "#39ff88", text: "#e6e6ff", dim: "#6b6b8f", line: "#1f1f45" };
+// 在原本「長出來」的動畫之後，讓有貢獻的柱子持續上下起伏，依欄位錯開時間變成一道波
+const BOB_DIP = 0.7; // 最低縮到原本高度的 30%
+const BOB_DUR = 2;
+const BOB_WAVES = 2; // 整張日曆同時有幾道波
+const BOB_SPLINE = 'calcMode="spline" keyTimes="0;0.5;1" keySplines="0.45 0 0.55 1;0.45 0 0.55 1"';
 
-// 中日韓字算兩格寬，截斷標題用
-function clip(text, max) {
-  let w = 0;
-  let out = "";
-  for (const ch of text) {
-    const cw = /[⺀-￿]/.test(ch) ? 2 : 1;
-    if (w + cw > max) return out + "…";
-    w += cw;
-    out += ch;
-  }
-  return out;
+function addBob(calendar) {
+  const barRe = /<g transform="translate\(([\d.]+) ([\d.]+)\)"><animateTransform attributeName="transform" type="translate" values="([\d.]+) ([\d.]+);([\d.]+) ([\d.]+)" dur="3s" repeatCount="1"><\/animateTransform>([\s\S]*?)<\/g>/g;
+  return calendar.replace(barRe, (whole, x, _y, _x0, y0, _x1, y1, inner) => {
+    const level = Number(inner.match(/cont-top-(\d)/)?.[1] ?? 0);
+    if (level === 0) return whole;
+    const begin = (3 + (Number(x) / 1280) * BOB_DUR * BOB_WAVES).toFixed(2);
+    const yMid = (Number(y1) + (Number(y0) - Number(y1)) * BOB_DIP).toFixed(2);
+    const bobMove = `<animateTransform attributeName="transform" type="translate" values="${x} ${y1};${x} ${yMid};${x} ${y1}" dur="${BOB_DUR}s" begin="${begin}s" repeatCount="indefinite" ${BOB_SPLINE}></animateTransform>`;
+    const faces = inner.replace(/<animate attributeName="height" values="([\d.]+);([\d.]+)" dur="3s" repeatCount="1"><\/animate>/g, (grow, h0, h1) => {
+      const hMid = (Number(h1) - (Number(h1) - Number(h0)) * BOB_DIP).toFixed(2);
+      return `${grow}<animate attributeName="height" values="${h1};${hMid};${h1}" dur="${BOB_DUR}s" begin="${begin}s" repeatCount="indefinite" ${BOB_SPLINE}></animate>`;
+    });
+    return whole.replace(inner, faces).replace("</animateTransform>", `</animateTransform>${bobMove}`);
+  });
 }
 
-function brackets(x, y, w, h, color) {
-  const l = 16;
-  return `<path d="M${x} ${y + l}V${y}H${x + l}M${x + w - l} ${y}H${x + w}V${y + l}M${x + w} ${y + h - l}V${y + h}H${x + w - l}M${x + l} ${y + h}H${x}V${y + h - l}" fill="none" stroke="${color}" stroke-width="2" opacity="0.8"/>`;
-}
+const STATS_WIDTH = 40;
 
-function panel(x, y, w, h, title) {
-  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#0a0a1e" fill-opacity="0.72" stroke="${NEON.line}"/>
-${brackets(x, y, w, h, NEON.cyan)}
-<text x="${x + 20}" y="${y + 30}" class="label">${esc(title)}</text>
-<line x1="${x + 20}" y1="${y + 42}" x2="${x + w - 20}" y2="${y + 42}" stroke="${NEON.line}"/>`;
-}
-
-function buildDashboard(stats, blog, contribSvg) {
+function buildContrib(stats, contribSvg, theme) {
+  const c = THEMES[theme];
   const children = topLevelChildren(contribSvg);
-  const style = children.find((c) => c.startsWith("<style"));
-  const calendar = children.find((c) => c.startsWith("<g"));
+  const style = children.find((x) => x.startsWith("<style"));
+  const calendar = children.find((x) => x.startsWith("<g"));
   if (!style || !calendar) throw new Error("3D contrib SVG 格式跟預期不同");
 
-  const W = 1280;
-  const H = 850;
+  const scale = 0.75;
+  const calTop = 40;
+  const height = Math.round(calTop + 850 * scale + 8);
 
-  // 右上：數字
-  const sx = 760, sy = 36, sw = 484, sh = 340;
-  const metrics = [
-    ["CONTRIBUTIONS / 1Y", fmt(stats.yearContributions), NEON.cyan],
-    ["CURRENT STREAK", `${stats.currentStreak}d`, NEON.magenta],
-    ["TOTAL COMMITS", fmt(stats.commits), NEON.green],
-    ["BEST STREAK / 1Y", `${stats.longestStreak}d`, NEON.yellow],
-    ["STARS EARNED", fmt(stats.stars), NEON.yellow],
-    ["PRS / ISSUES", `${stats.pullRequests} / ${stats.issues}`, NEON.cyan],
+  // 右上角：日曆上方的空白
+  const statRows = [
+    header("Last 12 months", STATS_WIDTH),
+    line("Contributions", fmt(stats.yearContributions), STATS_WIDTH),
+    line("Streak.Current", `${stats.currentStreak} days`, STATS_WIDTH),
+    line("Streak.Best", `${stats.longestStreak} days`, STATS_WIDTH),
+    line("PRs / Issues", `${stats.pullRequests} / ${stats.issues}`, STATS_WIDTH),
+    "",
+    header("All time", STATS_WIDTH),
+    line("Commits", fmt(stats.commits), STATS_WIDTH),
+    line("Contributions", fmt(stats.contributions), STATS_WIDTH),
+    line("Repos", stats.repos, STATS_WIDTH),
+    line("Stars", stats.stars, STATS_WIDTH),
   ];
-  const metricSvg = metrics
-    .map(([label, value, color], i) => {
-      const mx = sx + 24 + (i % 2) * 235;
-      const my = sy + 80 + Math.floor(i / 2) * 92;
-      return `<g class="rise" style="animation-delay:${(0.15 * i).toFixed(2)}s">
-<text x="${mx}" y="${my}" class="label">${label}</text>
-<text x="${mx}" y="${my + 46}" class="big" fill="${color}" filter="url(#glow)">${esc(value)}</text>
-</g>`;
+  const statX = SVG_WIDTH - 30 - (STATS_WIDTH + 2) * CHAR_W;
+  const statY = 76;
+
+  // 左下角：日曆下方的空白
+  const langX = 34;
+  const langY = height - 30 - stats.langShare.length * LH - LH;
+  const nameW = 12;
+  const barX = langX + (nameW + 2) * CHAR_W;
+  const barW = 170;
+  const langRows = [header("Languages", 33), ...stats.langShare.map((l) => `<tspan class="key">${esc(l.name.padEnd(nameW))}</tspan>`)];
+  const langBars = stats.langShare
+    .map((l, i) => {
+      const y = langY + (i + 1) * LH - 11;
+      return `<rect x="${barX}" y="${y}" width="${barW}" height="8" rx="2" fill="${c.track}"/>
+<rect x="${barX}" y="${y}" width="${Math.max(2, (l.pct / 100) * barW).toFixed(1)}" height="8" rx="2" fill="${c.from}"/>
+<text x="${barX + barW + 12}" y="${y + 9}" class="t value">${l.pct.toFixed(1).padStart(5)}%</text>`;
     })
     .join("\n");
 
-  // 左下：語言 + 最新文章
-  const lx = 30, ly = 548, lw = 500, lh = 274;
-  let offset = 0;
-  const barW = lw - 40;
-  const segs = stats.langShare
-    .map((l, i) => {
-      const w = (l.pct / 100) * barW;
-      const color = LANG_COLORS[l.name] ?? Object.values(NEON)[i % 4];
-      const seg = `<rect x="${(lx + 20 + offset).toFixed(1)}" y="${ly + 60}" width="${Math.max(2, w - 2).toFixed(1)}" height="10" fill="${color}"/>`;
-      offset += w;
-      return seg;
-    })
-    .join("");
-  const legend = stats.langShare
-    .map((l, i) => {
-      const color = LANG_COLORS[l.name] ?? Object.values(NEON)[i % 4];
-      const x = lx + 20 + (i % 3) * 158;
-      const y = ly + 96 + Math.floor(i / 3) * 22;
-      return `<circle cx="${x + 5}" cy="${y - 5}" r="5" fill="${color}"/><text x="${x + 16}" y="${y}" class="tiny">${esc(l.name)} <tspan fill="${NEON.dim}">${l.pct.toFixed(1)}%</tspan></text>`;
-    })
-    .join("");
-  const posts = blog.posts
-    .slice(0, 3)
-    .map((p, i) => {
-      const y = ly + 184 + i * 28;
-      return `<text x="${lx + 20}" y="${y}" class="small"><tspan fill="${NEON.green}">&gt;</tspan> <tspan fill="${NEON.dim}">${p.createdAt.slice(5, 10)}</tspan>  ${esc(clip(p.title, 46))}</text>`;
-    })
-    .join("\n");
-
-  const now = new Date().toISOString().replace("T", " ").slice(0, 16);
-
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-${style}
-<style>
-.mono, .label, .small, .tiny, .big, .cmd { font-family: 'JetBrains Mono','Cascadia Code',Consolas,'DejaVu Sans Mono',monospace; }
-.label { fill: ${NEON.dim}; font-size: 13px; letter-spacing: 2px; }
-.small { fill: ${NEON.text}; font-size: 15px; }
-.tiny { fill: ${NEON.text}; font-size: 13px; }
-.big { font-size: 40px; font-weight: 700; }
-.cmd { fill: ${NEON.text}; font-size: 20px; }
-.cursor { animation: blink 1s steps(1) infinite; }
-@keyframes blink { 50% { opacity: 0; } }
-.rise { animation: rise 0.7s ease-out both; }
-@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-.scan { animation: scan 6s linear infinite; }
-@keyframes scan { from { transform: translateY(-120px); } to { transform: translateY(${H}px); } }
-</style>
-<defs>
-  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-    <path d="M40 0H0V40" fill="none" stroke="#10102a" stroke-width="1"/>
-  </pattern>
-  <linearGradient id="scanline" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="${NEON.cyan}" stop-opacity="0"/>
-    <stop offset="1" stop-color="${NEON.cyan}" stop-opacity="0.07"/>
-  </linearGradient>
-  <filter id="glow" x="-20%" y="-40%" width="140%" height="180%">
-    <feGaussianBlur stdDeviation="4" result="b"/>
-    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-  </filter>
-</defs>
-<rect width="${W}" height="${H}" fill="#05050f"/>
-<rect width="${W}" height="${H}" fill="url(#grid)"/>
-${calendar}
-<text x="40" y="52" class="cmd"><tspan fill="${NEON.green}">sao@coding</tspan><tspan fill="${NEON.dim}">:~$</tspan> gh contrib --render=3d<tspan class="cursor" fill="${NEON.cyan}"> █</tspan></text>
-<text x="40" y="80" class="label">${stats.range[0]} → ${stats.range[1]}  ·  ${fmt(stats.yearContributions)} CONTRIBUTIONS</text>
-${panel(sx, sy, sw, sh, "// SYSTEM STATUS")}
-${metricSvg}
-${panel(lx, ly, lw, lh, "// LANGUAGES")}
-${segs}
-${legend}
-<text x="${lx + 20}" y="${ly + 150}" class="label">// LATEST LOG · blog.sao-x.com</text>
-${posts}
-<text x="${W - 30}" y="${H - 22}" text-anchor="end" class="label">LAST SYNC ${now} UTC · GITHUB-ACTIONS</text>
-<rect class="scan" width="${W}" height="120" fill="url(#scanline)"/>
-${brackets(8, 8, W - 16, H - 16, NEON.magenta)}
-</svg>
-`;
+  return terminal({
+    height,
+    theme,
+    title: `sao@coding: ~/contributions — ${stats.range[0]} → ${stats.range[1]}`,
+    style: style.replace(/^<style>|<\/style>$/g, ""),
+    body: `<g transform="translate(4 ${calTop}) scale(${scale})">${addBob(calendar)}</g>
+<text class="t" fill="${c.text}">
+${textBlock(statRows, statX, statY)}
+</text>
+<text class="t" fill="${c.text}">
+${textBlock(langRows, langX, langY)}
+</text>
+${langBars}`,
+  });
 }
 
 // ---------- README ----------
@@ -483,16 +409,20 @@ function thinkingMarkdown(t) {
 const [stats, blog] = await Promise.all([getGitHubStats(), getBlog()]);
 
 await mkdir("assets", { recursive: true });
-await writeFile("assets/neofetch-dark.svg", buildSvg(stats, blog, "dark"));
-await writeFile("assets/neofetch-light.svg", buildSvg(stats, blog, "light"));
+await writeFile("assets/neofetch-dark.svg", buildNeofetch(stats, "dark"));
+await writeFile("assets/neofetch-light.svg", buildNeofetch(stats, "light"));
 
-// 3D 日曆要先由 github-profile-3d-contrib 產生；沒有的話就沿用上次的 dashboard
-const contribSvg = await readFile("profile-3d-contrib/profile-night-rainbow.svg", "utf8").catch(() => null);
-if (contribSvg) await writeFile("assets/dashboard.svg", buildDashboard(stats, blog, contribSvg));
+// 3D 日曆要先由 github-profile-3d-contrib 產生（設定在 .github/3d-contrib.json）；沒有就沿用上次的圖
+for (const theme of ["dark", "light"]) {
+  const contribSvg = await readFile(`profile-3d-contrib/contrib-${theme}.svg`, "utf8").catch(() => null);
+  if (contribSvg) await writeFile(`assets/contrib-${theme}.svg`, buildContrib(stats, contribSvg, theme));
+}
 
 let readme = await readFile("README.md", "utf8");
-readme = replaceSection(readme, "BLOG-POSTS", postsMarkdown(blog.posts));
-readme = replaceSection(readme, "THINKING", thinkingMarkdown(blog.thinking));
-await writeFile("README.md", readme);
+if (blog) {
+  readme = replaceSection(readme, "BLOG-POSTS", postsMarkdown(blog.posts));
+  readme = replaceSection(readme, "THINKING", thinkingMarkdown(blog.thinking));
+  await writeFile("README.md", readme);
+}
 
-console.log(`ok: ${stats.repos} repos, ${stats.commits} commits, ${blog.posts.length} posts`);
+console.log(`ok: ${stats.repos} repos, ${stats.commits} commits, ${blog ? blog.posts.length : "?"} posts`);
