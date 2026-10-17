@@ -33,7 +33,9 @@ async function getGitHubStats() {
         followers { totalCount }
         contributionsCollection {
           contributionYears
-          contributionCalendar { weeks { contributionDays { contributionCount } } }
+          totalPullRequestContributions
+          totalIssueContributions
+          contributionCalendar { totalContributions weeks { contributionDays { date contributionCount } } }
         }
       }
     }`,
@@ -93,13 +95,49 @@ async function getGitHubStats() {
     cursor = r.pageInfo.hasNextPage ? r.pageInfo.endCursor : null;
   } while (cursor);
 
-  const weeks = user.contributionsCollection.contributionCalendar.weeks
+  const cc = user.contributionsCollection;
+  const weeks = cc.contributionCalendar.weeks
     .map((w) => w.contributionDays.reduce((sum, d) => sum + d.contributionCount, 0))
     .slice(-26);
 
-  const topLangs = [...langs.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([name]) => name);
+  // 連續貢獻天數；今天還沒 commit 不算斷
+  const days = cc.contributionCalendar.weeks.flatMap((w) => w.contributionDays);
+  let longestStreak = 0;
+  let run = 0;
+  for (const d of days) {
+    run = d.contributionCount > 0 ? run + 1 : 0;
+    longestStreak = Math.max(longestStreak, run);
+  }
+  let currentStreak = 0;
+  for (let i = days.length - 1; i >= 0; i--) {
+    if (days[i].contributionCount > 0) currentStreak++;
+    else if (i !== days.length - 1) break;
+  }
 
-  return { createdAt: new Date(user.createdAt), followers: user.followers.totalCount, commits, contributions, repos, stars, topLangs, weeks };
+  const langTotal = [...langs.values()].reduce((a, b) => a + b, 0) || 1;
+  const langShare = [...langs.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([name, size]) => ({ name, pct: (size / langTotal) * 100 }));
+  const topLangs = langShare.slice(0, 3).map((l) => l.name);
+
+  return {
+    createdAt: new Date(user.createdAt),
+    followers: user.followers.totalCount,
+    commits,
+    contributions,
+    repos,
+    stars,
+    topLangs,
+    langShare,
+    weeks,
+    yearContributions: cc.contributionCalendar.totalContributions,
+    pullRequests: cc.totalPullRequestContributions,
+    issues: cc.totalIssueContributions,
+    currentStreak,
+    longestStreak,
+    range: [days[0]?.date, days.at(-1)?.date],
+  };
 }
 
 async function getBlog() {
@@ -258,6 +296,168 @@ ${infoSvg}
 `;
 }
 
+// ---------- 3D dashboard ----------
+// 從 github-profile-3d-contrib 產出的 SVG 只取 3D 日曆，原本雷達圖跟圓餅圖的位置換成自己的 HUD 面板
+
+function topLevelChildren(svg) {
+  const body = svg.replace(/^[\s\S]*?<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "");
+  const children = [];
+  const re = /<(\/?)([a-zA-Z]+)[^>]*?(\/?)>/g;
+  let depth = 0;
+  let start = 0;
+  let m;
+  while ((m = re.exec(body))) {
+    if (m[1]) {
+      depth--;
+      if (depth === 0) children.push(body.slice(start, re.lastIndex));
+    } else {
+      if (depth === 0) start = m.index;
+      if (m[3]) {
+        if (depth === 0) children.push(body.slice(start, re.lastIndex));
+      } else depth++;
+    }
+  }
+  return children;
+}
+
+const LANG_COLORS = { TypeScript: "#3178c6", JavaScript: "#f1e05a", Go: "#00add8", "C#": "#2bbf5a", Python: "#3572a5", Rust: "#dea584", Kotlin: "#a97bff", Java: "#b07219", "C++": "#f34b7d", PHP: "#4f5d95" };
+const NEON = { cyan: "#00e5ff", magenta: "#ff3df2", yellow: "#ffc837", green: "#39ff88", text: "#e6e6ff", dim: "#6b6b8f", line: "#1f1f45" };
+
+// 中日韓字算兩格寬，截斷標題用
+function clip(text, max) {
+  let w = 0;
+  let out = "";
+  for (const ch of text) {
+    const cw = /[⺀-￿]/.test(ch) ? 2 : 1;
+    if (w + cw > max) return out + "…";
+    w += cw;
+    out += ch;
+  }
+  return out;
+}
+
+function brackets(x, y, w, h, color) {
+  const l = 16;
+  return `<path d="M${x} ${y + l}V${y}H${x + l}M${x + w - l} ${y}H${x + w}V${y + l}M${x + w} ${y + h - l}V${y + h}H${x + w - l}M${x + l} ${y + h}H${x}V${y + h - l}" fill="none" stroke="${color}" stroke-width="2" opacity="0.8"/>`;
+}
+
+function panel(x, y, w, h, title) {
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#0a0a1e" fill-opacity="0.72" stroke="${NEON.line}"/>
+${brackets(x, y, w, h, NEON.cyan)}
+<text x="${x + 20}" y="${y + 30}" class="label">${esc(title)}</text>
+<line x1="${x + 20}" y1="${y + 42}" x2="${x + w - 20}" y2="${y + 42}" stroke="${NEON.line}"/>`;
+}
+
+function buildDashboard(stats, blog, contribSvg) {
+  const children = topLevelChildren(contribSvg);
+  const style = children.find((c) => c.startsWith("<style"));
+  const calendar = children.find((c) => c.startsWith("<g"));
+  if (!style || !calendar) throw new Error("3D contrib SVG 格式跟預期不同");
+
+  const W = 1280;
+  const H = 850;
+
+  // 右上：數字
+  const sx = 760, sy = 36, sw = 484, sh = 340;
+  const metrics = [
+    ["CONTRIBUTIONS / 1Y", fmt(stats.yearContributions), NEON.cyan],
+    ["CURRENT STREAK", `${stats.currentStreak}d`, NEON.magenta],
+    ["TOTAL COMMITS", fmt(stats.commits), NEON.green],
+    ["BEST STREAK / 1Y", `${stats.longestStreak}d`, NEON.yellow],
+    ["STARS EARNED", fmt(stats.stars), NEON.yellow],
+    ["PRS / ISSUES", `${stats.pullRequests} / ${stats.issues}`, NEON.cyan],
+  ];
+  const metricSvg = metrics
+    .map(([label, value, color], i) => {
+      const mx = sx + 24 + (i % 2) * 235;
+      const my = sy + 80 + Math.floor(i / 2) * 92;
+      return `<g class="rise" style="animation-delay:${(0.15 * i).toFixed(2)}s">
+<text x="${mx}" y="${my}" class="label">${label}</text>
+<text x="${mx}" y="${my + 46}" class="big" fill="${color}" filter="url(#glow)">${esc(value)}</text>
+</g>`;
+    })
+    .join("\n");
+
+  // 左下：語言 + 最新文章
+  const lx = 30, ly = 548, lw = 500, lh = 274;
+  let offset = 0;
+  const barW = lw - 40;
+  const segs = stats.langShare
+    .map((l, i) => {
+      const w = (l.pct / 100) * barW;
+      const color = LANG_COLORS[l.name] ?? Object.values(NEON)[i % 4];
+      const seg = `<rect x="${(lx + 20 + offset).toFixed(1)}" y="${ly + 60}" width="${Math.max(2, w - 2).toFixed(1)}" height="10" fill="${color}"/>`;
+      offset += w;
+      return seg;
+    })
+    .join("");
+  const legend = stats.langShare
+    .map((l, i) => {
+      const color = LANG_COLORS[l.name] ?? Object.values(NEON)[i % 4];
+      const x = lx + 20 + (i % 3) * 158;
+      const y = ly + 96 + Math.floor(i / 3) * 22;
+      return `<circle cx="${x + 5}" cy="${y - 5}" r="5" fill="${color}"/><text x="${x + 16}" y="${y}" class="tiny">${esc(l.name)} <tspan fill="${NEON.dim}">${l.pct.toFixed(1)}%</tspan></text>`;
+    })
+    .join("");
+  const posts = blog.posts
+    .slice(0, 3)
+    .map((p, i) => {
+      const y = ly + 184 + i * 28;
+      return `<text x="${lx + 20}" y="${y}" class="small"><tspan fill="${NEON.green}">&gt;</tspan> <tspan fill="${NEON.dim}">${p.createdAt.slice(5, 10)}</tspan>  ${esc(clip(p.title, 46))}</text>`;
+    })
+    .join("\n");
+
+  const now = new Date().toISOString().replace("T", " ").slice(0, 16);
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+${style}
+<style>
+.mono, .label, .small, .tiny, .big, .cmd { font-family: 'JetBrains Mono','Cascadia Code',Consolas,'DejaVu Sans Mono',monospace; }
+.label { fill: ${NEON.dim}; font-size: 13px; letter-spacing: 2px; }
+.small { fill: ${NEON.text}; font-size: 15px; }
+.tiny { fill: ${NEON.text}; font-size: 13px; }
+.big { font-size: 40px; font-weight: 700; }
+.cmd { fill: ${NEON.text}; font-size: 20px; }
+.cursor { animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.rise { animation: rise 0.7s ease-out both; }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.scan { animation: scan 6s linear infinite; }
+@keyframes scan { from { transform: translateY(-120px); } to { transform: translateY(${H}px); } }
+</style>
+<defs>
+  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+    <path d="M40 0H0V40" fill="none" stroke="#10102a" stroke-width="1"/>
+  </pattern>
+  <linearGradient id="scanline" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="${NEON.cyan}" stop-opacity="0"/>
+    <stop offset="1" stop-color="${NEON.cyan}" stop-opacity="0.07"/>
+  </linearGradient>
+  <filter id="glow" x="-20%" y="-40%" width="140%" height="180%">
+    <feGaussianBlur stdDeviation="4" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<rect width="${W}" height="${H}" fill="#05050f"/>
+<rect width="${W}" height="${H}" fill="url(#grid)"/>
+${calendar}
+<text x="40" y="52" class="cmd"><tspan fill="${NEON.green}">sao@coding</tspan><tspan fill="${NEON.dim}">:~$</tspan> gh contrib --render=3d<tspan class="cursor" fill="${NEON.cyan}"> █</tspan></text>
+<text x="40" y="80" class="label">${stats.range[0]} → ${stats.range[1]}  ·  ${fmt(stats.yearContributions)} CONTRIBUTIONS</text>
+${panel(sx, sy, sw, sh, "// SYSTEM STATUS")}
+${metricSvg}
+${panel(lx, ly, lw, lh, "// LANGUAGES")}
+${segs}
+${legend}
+<text x="${lx + 20}" y="${ly + 150}" class="label">// LATEST LOG · blog.sao-x.com</text>
+${posts}
+<text x="${W - 30}" y="${H - 22}" text-anchor="end" class="label">LAST SYNC ${now} UTC · GITHUB-ACTIONS</text>
+<rect class="scan" width="${W}" height="120" fill="url(#scanline)"/>
+${brackets(8, 8, W - 16, H - 16, NEON.magenta)}
+</svg>
+`;
+}
+
 // ---------- README ----------
 
 function replaceSection(readme, name, content) {
@@ -285,6 +485,10 @@ const [stats, blog] = await Promise.all([getGitHubStats(), getBlog()]);
 await mkdir("assets", { recursive: true });
 await writeFile("assets/neofetch-dark.svg", buildSvg(stats, blog, "dark"));
 await writeFile("assets/neofetch-light.svg", buildSvg(stats, blog, "light"));
+
+// 3D 日曆要先由 github-profile-3d-contrib 產生；沒有的話就沿用上次的 dashboard
+const contribSvg = await readFile("profile-3d-contrib/profile-night-rainbow.svg", "utf8").catch(() => null);
+if (contribSvg) await writeFile("assets/dashboard.svg", buildDashboard(stats, blog, contribSvg));
 
 let readme = await readFile("README.md", "utf8");
 readme = replaceSection(readme, "BLOG-POSTS", postsMarkdown(blog.posts));

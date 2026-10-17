@@ -32,18 +32,19 @@ jobs:
         with:
           node-version: 22
 
-      - name: Generate neofetch card & blog posts
-        run: node scripts/update-profile.mjs
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # 選填：放一個 PAT 進 secrets 才會算到私人 repo 的語言與 commit
-          GH_STATS_TOKEN: ${{ secrets.GH_STATS_TOKEN }}
-
+      # 先產生 3D 日曆，dashboard 會從裡面取日曆圖層
       - name: Generate 3D contributions
         uses: yoshi389111/github-profile-3d-contrib@v0.9.3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           USERNAME: ${{ github.repository_owner }}
+
+      - name: Generate neofetch card, dashboard & blog posts
+        run: node scripts/update-profile.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 選填：放一個 PAT 進 secrets 才會算到私人 repo 的語言與 commit
+          GH_STATS_TOKEN: ${{ secrets.GH_STATS_TOKEN }}
 
       - name: Commit
         run: |

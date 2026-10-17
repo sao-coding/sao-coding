@@ -67,11 +67,8 @@
 
 <br />
 
-<!-- 3D contribution 由 yoshi389111/github-profile-3d-contrib 每天產生 -->
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./profile-3d-contrib/profile-night-rainbow.svg" />
-  <img alt="3D contributions" src="./profile-3d-contrib/profile-gitblock.svg" width="100%" />
-</picture>
+<!-- 3D 日曆取自 yoshi389111/github-profile-3d-contrib，HUD 面板由 scripts/update-profile.mjs 疊上 -->
+<img alt="3D contribution dashboard" src="./assets/dashboard.svg" width="100%" />
 
 <!-- 貪食蛇由 Platane/snk 每天產生 -->
 <picture>
