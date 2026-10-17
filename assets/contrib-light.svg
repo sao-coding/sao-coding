@@ -53,32 +53,33 @@ fill-opacity: 0.5;
 <tspan x="585.4" y="156"><tspan class="cc">. </tspan><tspan class="key">PRs / Issues</tspan>:<tspan class="cc"> .................. </tspan><tspan class="value">6 / 18</tspan></tspan>
 <tspan x="585.4" y="176"></tspan>
 <tspan x="585.4" y="196"><tspan class="title">All time</tspan> <tspan class="cc">———————————————————————————————</tspan></tspan>
-<tspan x="585.4" y="216"><tspan class="cc">. </tspan><tspan class="key">Commits</tspan>:<tspan class="cc"> ........................ </tspan><tspan class="value">5,442</tspan></tspan>
-<tspan x="585.4" y="236"><tspan class="cc">. </tspan><tspan class="key">Contributions</tspan>:<tspan class="cc"> .................. </tspan><tspan class="value">5,678</tspan></tspan>
-<tspan x="585.4" y="256"><tspan class="cc">. </tspan><tspan class="key">Repos</tspan>:<tspan class="cc"> ............................. </tspan><tspan class="value">53</tspan></tspan>
-<tspan x="585.4" y="276"><tspan class="cc">. </tspan><tspan class="key">Stars</tspan>:<tspan class="cc"> ............................. </tspan><tspan class="value">32</tspan></tspan>
+<tspan x="585.4" y="216"><tspan class="cc">. </tspan><tspan class="key">Commits</tspan>:<tspan class="cc"> ........................ </tspan><tspan class="value">2,134</tspan></tspan>
+<tspan x="585.4" y="236"><tspan class="cc">. </tspan><tspan class="key">Private.Contribs</tspan>:<tspan class="cc"> ............... </tspan><tspan class="value">3,308</tspan></tspan>
+<tspan x="585.4" y="256"><tspan class="cc">. </tspan><tspan class="key">Contributions</tspan>:<tspan class="cc"> .................. </tspan><tspan class="value">5,678</tspan></tspan>
+<tspan x="585.4" y="276"><tspan class="cc">. </tspan><tspan class="key">Repos</tspan>:<tspan class="cc"> ............................. </tspan><tspan class="value">89</tspan></tspan>
+<tspan x="585.4" y="296"><tspan class="cc">. </tspan><tspan class="key">Stars</tspan>:<tspan class="cc"> ............................. </tspan><tspan class="value">37</tspan></tspan>
 </text>
 <text class="t" fill="#24292f">
 <tspan x="34" y="536"><tspan class="title">Languages</tspan> <tspan class="cc">———————————————————————</tspan></tspan>
-<tspan x="34" y="556"><tspan class="key">TypeScript  </tspan></tspan>
+<tspan x="34" y="556"><tspan class="key">C#          </tspan></tspan>
 <tspan x="34" y="576"><tspan class="key">JavaScript  </tspan></tspan>
-<tspan x="34" y="596"><tspan class="key">Python      </tspan></tspan>
-<tspan x="34" y="616"><tspan class="key">C++         </tspan></tspan>
-<tspan x="34" y="636"><tspan class="key">Go          </tspan></tspan>
+<tspan x="34" y="596"><tspan class="key">TypeScript  </tspan></tspan>
+<tspan x="34" y="616"><tspan class="key">Stylus      </tspan></tspan>
+<tspan x="34" y="636"><tspan class="key">Python      </tspan></tspan>
 </text>
 <rect x="157.20000000000002" y="545" width="170" height="8" rx="2" fill="#eaeef2"/>
-<rect x="157.20000000000002" y="545" width="149.8" height="8" rx="2" fill="#1f6feb"/>
-<text x="339.20000000000005" y="554" class="t value"> 88.1%</text>
+<rect x="157.20000000000002" y="545" width="82.1" height="8" rx="2" fill="#1f6feb"/>
+<text x="339.20000000000005" y="554" class="t value"> 48.3%</text>
 <rect x="157.20000000000002" y="565" width="170" height="8" rx="2" fill="#eaeef2"/>
-<rect x="157.20000000000002" y="565" width="11.1" height="8" rx="2" fill="#1f6feb"/>
-<text x="339.20000000000005" y="574" class="t value">  6.5%</text>
+<rect x="157.20000000000002" y="565" width="71.1" height="8" rx="2" fill="#1f6feb"/>
+<text x="339.20000000000005" y="574" class="t value"> 41.8%</text>
 <rect x="157.20000000000002" y="585" width="170" height="8" rx="2" fill="#eaeef2"/>
-<rect x="157.20000000000002" y="585" width="2.9" height="8" rx="2" fill="#1f6feb"/>
-<text x="339.20000000000005" y="594" class="t value">  1.7%</text>
+<rect x="157.20000000000002" y="585" width="14.4" height="8" rx="2" fill="#1f6feb"/>
+<text x="339.20000000000005" y="594" class="t value">  8.5%</text>
 <rect x="157.20000000000002" y="605" width="170" height="8" rx="2" fill="#eaeef2"/>
 <rect x="157.20000000000002" y="605" width="2.0" height="8" rx="2" fill="#1f6feb"/>
-<text x="339.20000000000005" y="614" class="t value">  1.1%</text>
+<text x="339.20000000000005" y="614" class="t value">  0.4%</text>
 <rect x="157.20000000000002" y="625" width="170" height="8" rx="2" fill="#eaeef2"/>
 <rect x="157.20000000000002" y="625" width="2.0" height="8" rx="2" fill="#1f6feb"/>
-<text x="339.20000000000005" y="634" class="t value">  0.8%</text>
+<text x="339.20000000000005" y="634" class="t value">  0.4%</text>
 </svg>

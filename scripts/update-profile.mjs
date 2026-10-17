@@ -44,6 +44,7 @@ async function getGitHubStats() {
 
   // 每年的 commit / contribution 加總
   let commits = 0;
+  let privateContributions = 0;
   let contributions = 0;
   for (const year of user.contributionsCollection.contributionYears) {
     const { user: y } = await gql(
@@ -58,11 +59,13 @@ async function getGitHubStats() {
       }`,
       { login: USER, from: `${year}-01-01T00:00:00Z`, to: `${year}-12-31T23:59:59Z` },
     );
-    commits += y.contributionsCollection.totalCommitContributions + y.contributionsCollection.restrictedContributionsCount;
+    // token 看不到的私人貢獻（例如公司 org）GitHub 只給總數、分不出是不是 commit，所以分開記
+    commits += y.contributionsCollection.totalCommitContributions;
+    privateContributions += y.contributionsCollection.restrictedContributionsCount;
     contributions += y.contributionsCollection.contributionCalendar.totalContributions;
   }
 
-  // 自己的 repo：星星數 + 語言
+  // 自己的 repo：數量、星星含私人跟 fork（token 看得到才算得到）；語言只看非 fork
   let repos = 0;
   let stars = 0;
   const langs = new Map();
@@ -71,10 +74,10 @@ async function getGitHubStats() {
     const { user: page } = await gql(
       `query($login: String!, $cursor: String) {
         user(login: $login) {
-          repositories(first: 100, after: $cursor, ownerAffiliations: OWNER, isFork: false) {
-            totalCount
+          repositories(first: 100, after: $cursor, ownerAffiliations: OWNER) {
             pageInfo { hasNextPage endCursor }
             nodes {
+              isFork
               stargazerCount
               languages(first: 10, orderBy: { field: SIZE, direction: DESC }) { edges { size node { name } } }
             }
@@ -84,9 +87,10 @@ async function getGitHubStats() {
       { login: USER, cursor },
     );
     const r = page.repositories;
-    repos = r.totalCount;
     for (const repo of r.nodes) {
+      repos += 1;
       stars += repo.stargazerCount;
+      if (repo.isFork) continue;
       for (const { size, node } of repo.languages.edges) {
         if (IGNORED_LANGS.has(node.name)) continue;
         langs.set(node.name, (langs.get(node.name) ?? 0) + size);
@@ -125,6 +129,7 @@ async function getGitHubStats() {
     createdAt: new Date(user.createdAt),
     followers: user.followers.totalCount,
     commits,
+    privateContributions,
     contributions,
     repos,
     stars,
@@ -345,6 +350,7 @@ function buildContrib(stats, contribSvg, theme) {
     "",
     header("All time", STATS_WIDTH),
     line("Commits", fmt(stats.commits), STATS_WIDTH),
+    line("Private.Contribs", fmt(stats.privateContributions), STATS_WIDTH),
     line("Contributions", fmt(stats.contributions), STATS_WIDTH),
     line("Repos", stats.repos, STATS_WIDTH),
     line("Stars", stats.stars, STATS_WIDTH),
