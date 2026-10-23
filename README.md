@@ -21,12 +21,12 @@ Taiwanese dev in Taipei, writing code at MSI. Web stuff by day, self-hosting eve
 #### Latest posts
 
 <!-- BLOG-POSTS:START -->
+- `2026-10-23` [手機滑文章會卡？兇手是紙紋](https://blog.sao-x.com/posts/paper-texture-perf) <sub>#programming</sub>
 - `2026-10-21` [元件設計測試](https://blog.sao-x.com/posts/component-kitchen-sink) <sub>#others</sub>
 - `2026-10-20` [test](https://blog.sao-x.com/posts/test-2) <sub>#others</sub>
 - `2026-10-08` [Caddy + Cloudflare 自動更新動態 IPv6 DDNS](https://blog.sao-x.com/posts/caddy-cloudflare-dynamic-ipv6-ddns) <sub>#self-hosted</sub>
 - `2026-08-30` [手機版卡片被撐破：一個 min-width: auto 引起的水平溢出](https://blog.sao-x.com/posts/css-min-width-auto-horizontal-overflow) <sub>#programming</sub>
 - `2026-08-04` [自架 ShareX 神器 Zipline](https://blog.sao-x.com/posts/deploy-zipline-docker-caddy) <sub>#self-hosted</sub>
-- `2026-08-04` [修好 zed-i18n 中文化版在 Windows 11 消失的右鍵選單](https://blog.sao-x.com/posts/fix-zed-i18n-windows-11-context-menu) <sub>#others</sub>
 <!-- BLOG-POSTS:END -->
 
 <!-- THINKING:START -->
