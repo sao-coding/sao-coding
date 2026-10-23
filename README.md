@@ -30,7 +30,7 @@ Taiwanese dev in Taipei, writing code at MSI. Web stuff by day, self-hosting eve
 <!-- BLOG-POSTS:END -->
 
 <!-- THINKING:START -->
-> 💭 🎉 自訂右鍵功能正式啟動！🤣 現在只要按下右鍵，就能享受更方便、更直覺的操作體驗！ 快去試試看，有什麼想法或建議也歡迎留言告訴我～ <sub>— [2026-07-18](https://blog.sao-x.com/thinking)</sub>
+> 💭 颱風假放的好R <sub>— [2026-10-23](https://blog.sao-x.com/thinking)</sub>
 <!-- THINKING:END -->
 
 #### Working on
